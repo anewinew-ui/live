@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAY STATION · 실시간 3D 해변 입장</title>
+    <meta name="description" content="실시간 유튜브 라이브 3D 해변 Stay Station으로 바로 입장하세요.">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            background: radial-gradient(circle at 50% 20%, #172554 0%, #0b132b 52%, #040814 100%);
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .stars {
+            position: fixed; inset: 0; pointer-events: none;
+            background-image:
+                radial-gradient(2px 2px at 18% 24%, rgba(255,255,255,0.75), transparent),
+                radial-gradient(1.5px 1.5px at 78% 18%, rgba(186,230,253,0.7), transparent),
+                radial-gradient(2px 2px at 64% 38%, rgba(254,240,138,0.65), transparent),
+                radial-gradient(1.5px 1.5px at 32% 68%, rgba(167,243,208,0.55), transparent),
+                radial-gradient(2px 2px at 85% 62%, rgba(255,255,255,0.6), transparent);
+            opacity: 0.7;
+        }
+        .card {
+            position: relative;
+            width: min(94vw, 430px);
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 26px;
+            padding: 32px 26px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            background: rgba(45, 212, 191, 0.14);
+            border: 1px solid rgba(45, 212, 191, 0.35);
+            color: #99f6e4;
+            margin-bottom: 16px;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #2dd4bf;
+            box-shadow: 0 0 10px #2dd4bf;
+            animation: pulse 1.6s infinite;
+        }
+        .dot.offline { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.82); }
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+        p.desc {
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #cbd5e1;
+            margin-bottom: 22px;
+        }
+        .spinner {
+            width: 34px; height: 34px;
+            margin: 0 auto 18px;
+            border: 3px solid rgba(148, 163, 184, 0.25);
+            border-top-color: #2dd4bf;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        a.btn, button.btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 13px 18px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.12s ease, opacity 0.15s ease;
+        }
+        a.btn:active, button.btn:active { transform: scale(0.98); }
+        .btn-primary {
+            background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+            color: #04131c;
+        }
+        .btn-yt {
+            background: rgba(244, 63, 94, 0.22);
+            border: 1px solid rgba(251, 113, 133, 0.42);
+            color: #fecdd3;
+        }
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #e2e8f0;
+        }
+        .hidden { display: none !important; }
+        .sub {
+            margin-top: 16px;
+            font-size: 11.5px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <main class="card">
+        <div class="badge">
+            <span id="status-dot" class="dot"></span>
+            <span>STAY STATION LIVE BEACH</span>
+        </div>
+        <div id="spinner" class="spinner"></div>
+        <h1 id="title">🏖️ 실시간 해변으로 연결 중...</h1>
+        <p id="desc" class="desc">현재 열려 있는 3D 해변 서버를 확인하고 있습니다.<br>잠시만 기다려 주세요.</p>
+        <div class="actions">
+            <a id="enter-btn" href="#" class="btn btn-primary hidden">🏖️ 지금 해변 입장하기</a>
+            <button id="retry-btn" type="button" onclick="checkLiveAndRedirect(true)" class="btn btn-ghost hidden">🔄 다시 연결 확인</button>
+            <a id="yt-btn" href="https://www.youtube.com/@stay_station_live/live" target="_blank" rel="noopener noreferrer" class="btn btn-yt">🔴 YouTube @stay_station_live 보러가기 ↗</a>
+        </div>
+        <div id="sub-note" class="sub">고정 입장 주소 · anewinew-ui.github.io/live</div>
+    </main>
+
+    <script>
+        const RAW_LIVE_JSON = 'https://raw.githubusercontent.com/anewinew-ui/live/main/live.json';
+        const LOCAL_LIVE_JSON = './live.json';
+        let autoRecheckTimer = null;
+
+        async function fetchJsonWithTimeout(url, timeoutMs = 4500) {
+            const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+            try {
+                const res = await fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (_) {
+                return null;
+            } finally {
+                if (timer) clearTimeout(timer);
+            }
+        }
+
+        async function probeTunnelLive(baseUrl) {
+            const clean = String(baseUrl || '').replace(/\/+$/, '');
+            if (!/^https:\/\/[a-z0-9.-]+/i.test(clean)) return false;
+            const data = await fetchJsonWithTimeout(`${clean}/api/ping?t=${Date.now()}`, 4500);
+            return Boolean(data && data.ok);
+        }
+
+        function setOfflineUI(youtubeUrl) {
+            const dot = document.getElementById('status-dot');
+            const spinner = document.getElementById('spinner');
+            const title = document.getElementById('title');
+            const desc = document.getElementById('desc');
+            const enterBtn = document.getElementById('enter-btn');
+            const retryBtn = document.getElementById('retry-btn');
+            const ytBtn = document.getElementById('yt-btn');
+            const sub = document.getElementById('sub-note');
+
+            dot.classList.add('offline');
+            spinner.classList.add('hidden');
+            enterBtn.classList.add('hidden');
+            retryBtn.classList.remove('hidden');
+            title.textContent = '🌙 현재 해변 방송 준비 중이에요';
+            desc.innerHTML = '방송이 시작되면 12초마다 자동으로 연결됩니다.<br>잠시 후 다시 확인하거나 유튜브 채널에서 방송 상태를 확인해 보세요!';
+            if (youtubeUrl) ytBtn.href = youtubeUrl;
+            sub.textContent = '방송이 켜지면 이 화면에서 자동으로 해변에 입장합니다.';
+
+            if (autoRecheckTimer) clearTimeout(autoRecheckTimer);
+            autoRecheckTimer = setTimeout(() => checkLiveAndRedirect(false), 12000);
+        }
+
+        async function checkLiveAndRedirect(isManual = false) {
+            if (autoRecheckTimer) { clearTimeout(autoRecheckTimer); autoRecheckTimer = null; }
+            const dot = document.getElementById('status-dot');
+            const spinner = document.getElementById('spinner');
+            const title = document.getElementById('title');
+            const desc = document.getElementById('desc');
+            const enterBtn = document.getElementById('enter-btn');
+            const retryBtn = document.getElementById('retry-btn');
+            const ytBtn = document.getElementById('yt-btn');
+
+            if (isManual) {
+                dot.classList.remove('offline');
+                spinner.classList.remove('hidden');
+                retryBtn.classList.add('hidden');
+                title.textContent = '🏖️ 해변 서버 다시 확인 중...';
+                desc.innerHTML = '최신 방송 주소를 불러오고 있습니다.';
+            }
+
+            const ts = Date.now();
+            // Prefer raw.githubusercontent.com (updates within ~5s after git push), fall back to ./live.json
+            let info = await fetchJsonWithTimeout(`${RAW_LIVE_JSON}?t=${ts}`, 4000);
+            if (!info || !info.url) {
+                info = await fetchJsonWithTimeout(`${LOCAL_LIVE_JSON}?t=${ts}`, 4000);
+            }
+            const ytUrl = (info && info.youtubeUrl) ? info.youtubeUrl : 'https://www.youtube.com/@stay_station_live/live';
+            ytBtn.href = ytUrl;
+
+            const candidateUrl = info && typeof info.url === 'string' ? info.url.trim().replace(/\/+$/, '') : '';
+            if (!candidateUrl) {
+                setOfflineUI(ytUrl);
+                return;
+            }
+
+            const isAlive = await probeTunnelLive(candidateUrl);
+            if (!isAlive) {
+                const localInfo = await fetchJsonWithTimeout(`${LOCAL_LIVE_JSON}?t=${Date.now()}`, 3500);
+                const altUrl = localInfo && typeof localInfo.url === 'string' ? localInfo.url.trim().replace(/\/+$/, '') : '';
+                if (altUrl && altUrl !== candidateUrl && await probeTunnelLive(altUrl)) {
+                    enterNow(altUrl);
+                    return;
+                }
+                setOfflineUI(ytUrl);
+                return;
+            }
+            enterNow(candidateUrl);
+        }
+
+        function enterNow(targetUrl) {
+            const title = document.getElementById('title');
+            const desc = document.getElementById('desc');
+            const enterBtn = document.getElementById('enter-btn');
+            const search = window.location.search || '';
+            const dest = `${targetUrl}/${search}`;
+            title.textContent = '✨ 해변에 입장하는 중...';
+            desc.innerHTML = '실시간 3D 해변으로 자동 이동합니다.<br>이동되지 않으면 아래 버튼을 눌러주세요.';
+            enterBtn.href = dest;
+            enterBtn.classList.remove('hidden');
+            window.location.replace(dest);
+        }
+
+        checkLiveAndRedirect(false);
+    </script>
+</body>
+</html>
